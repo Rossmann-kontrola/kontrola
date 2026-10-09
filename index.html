@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Náhodná kontrola · Rossmann</title>
+  <!-- Instalace jako aplikace na tablet -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#D20A2E">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Kontroly">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <!-- Knihovna pro spojení s databází Supabase -->
@@ -701,7 +709,12 @@
       const { data, error } = await db.auth.signInWithPassword({ email: email, password: heslo });
       if (error) {
         $("loginBtn").disabled = false;
-        $("loginChyba").textContent = error.message.includes("Invalid") ? "Špatný e-mail nebo heslo" : "Přihlášení se nepovedlo. Zkontrolujte internet.";
+        const m = error.message || "";
+        $("loginChyba").textContent =
+          /invalid/i.test(m) ? "Špatný e-mail nebo heslo" :
+          /not confirmed/i.test(m) ? "Účet čeká na potvrzení e-mailu. V Supabase vypněte Confirm email a účet potvrďte." :
+          /fetch|network/i.test(m) ? "Nepodařilo se spojit s databází. Zkontrolujte internet." :
+          "Přihlášení se nepovedlo: " + m;
         return;
       }
       const { data: spravce } = await db.from("spravci").select("*").eq("user_id", data.user.id).maybeSingle();
@@ -1032,7 +1045,11 @@
       $("pridatBtn").disabled = false;
       if (e2) { hlaska("uzivHlaska", "Účet vznikl, ale přístup se nepodařilo uložit: " + e2.message, "chyba"); return; }
       $("novyJmeno").value = ""; $("novyEmail").value = ""; $("novyHeslo").value = "";
-      hlaska("uzivHlaska", "Přístup pro " + jmeno + " je připravený", "ok");
+      if (!reg.session) {
+        hlaska("uzivHlaska", "Pozor: účet čeká na potvrzení e-mailu, takže se zatím nepřihlásí. V Supabase vypněte Confirm email.", "chyba");
+      } else {
+        hlaska("uzivHlaska", "Přístup pro " + jmeno + " je připravený", "ok");
+      }
       nactiUzivatele();
     }
 
@@ -1081,6 +1098,11 @@
 
     // Když se tablet vrátí z režimu spánku nebo znovu připojí, rovnou odeslat neodeslané
     window.addEventListener("online", odesliFrontu);
+
+    // Instalovatelná aplikace: zaregistrovat service worker (funguje jen na https adrese)
+    if ("serviceWorker" in navigator && location.protocol === "https:") {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
     db.auth.signOut();   // na startu nikdo není přihlášený do administrace
     start();
   </script>
