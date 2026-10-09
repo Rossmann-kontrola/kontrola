@@ -314,6 +314,14 @@
           </div>
         </div>
 
+        <div class="blok">
+          <div class="blok-hlava"><h3>Návrat na úvodní obrazovku</h3></div>
+          <div class="blok-telo">
+            <div class="veta">Výsledek (červená / zelená obrazovka) se sám zavře po <input type="number" id="navrat" min="0" max="60"> s.</div>
+            <p class="napoveda">0 = výsledek zůstane, dokud na obrazovku někdo neťukne. Ťuknutím jde výsledek zavřít vždy i dřív.</p>
+          </div>
+        </div>
+
         <div class="blok" id="blokT1">
           <div class="blok-hlava">
             <div><h3>Trigger 1: více STOP v krátkém čase</h3>
@@ -479,6 +487,7 @@
 
     const VYCHOZI_NASTAVENI = {
       zakladni: 5,
+      navrat: 5,   // po kolika vteřinách se výsledek sám zavře (0 = jen ťuknutím)
       t1: { zapnuto: true, pocet: 3, minut: 1, nova: 1, trvani: 10, jednotka: "screening" },
       t2: { zapnuto: true, minut: 10, nova: 20 },
       majak: { zapnuto: false, ip: "" }
@@ -677,8 +686,28 @@
       okno.style.display = "flex";
       stop ? zvukAlarm() : zvukOk();
       majak(stop ? "cervena" : "zelena", nastaveni().majak);
+      spustOdpocet();
     }
-    function zavriVysledek() { $("vysledek").style.display = "none"; majak("vypnout", nastaveni().majak); }
+
+    // Automatický návrat na úvodní obrazovku po nastaveném počtu vteřin
+    let odpocet = null;
+    function spustOdpocet() {
+      clearInterval(odpocet);
+      let zbyva = parseInt(nastaveni().navrat) || 0;
+      const text = $("pokracuj");
+      if (zbyva <= 0) { text.textContent = "Ťukněte pro dalšího"; return; }
+      text.textContent = "Návrat za " + zbyva + " s";
+      odpocet = setInterval(() => {
+        zbyva--;
+        if (zbyva <= 0) zavriVysledek();
+        else text.textContent = "Návrat za " + zbyva + " s";
+      }, 1000);
+    }
+    function zavriVysledek() {
+      clearInterval(odpocet);
+      $("vysledek").style.display = "none";
+      majak("vypnout", nastaveni().majak);
+    }
 
     // =========================================================
     //  RGB MAJÁK (WLED přes Wi-Fi)
@@ -793,6 +822,7 @@
       $("nazev").value = z.nazev;
       $("infoTentoTablet").textContent = z.id === zarizeniId ? "Toto je zařízení, na kterém jste právě přihlášený." : "";
       $("zakladni").value = n.zakladni; ukazZakladni();
+      $("navrat").value = n.navrat;
       $("t1Zapnuto").checked = n.t1.zapnuto; $("t1Pocet").value = n.t1.pocet; $("t1Minut").value = n.t1.minut;
       $("t1Nova").value = n.t1.nova; $("t1Trvani").value = n.t1.trvani; zvolJednotku(n.t1.jednotka);
       $("t2Zapnuto").checked = n.t2.zapnuto; $("t2Minut").value = n.t2.minut; $("t2Nova").value = n.t2.nova;
@@ -819,13 +849,15 @@
       const id = $("upravZarizeni").value;
       const h = {
         t1Pocet: cisloZ("t1Pocet", 2, 50), t1Minut: cisloZ("t1Minut", 1, 120), t1Nova: cisloZ("t1Nova", 0, 100),
-        t1Trvani: cisloZ("t1Trvani", 1, 500), t2Minut: cisloZ("t2Minut", 1, 600), t2Nova: cisloZ("t2Nova", 1, 100)
+        t1Trvani: cisloZ("t1Trvani", 1, 500), t2Minut: cisloZ("t2Minut", 1, 600), t2Nova: cisloZ("t2Nova", 1, 100),
+        navrat: cisloZ("navrat", 0, 60)
       };
       const nazev = $("nazev").value.trim();
       if (!nazev) { hlaska("ulozeno", "Vyplňte název zařízení", "chyba"); return; }
-      if (Object.values(h).some(v => v === null)) { hlaska("ulozeno", "Vyplňte prosím všechna čísla u triggerů", "chyba"); return; }
+      if (Object.values(h).some(v => v === null)) { hlaska("ulozeno", "Vyplňte prosím všechna čísla (návrat a triggery)", "chyba"); return; }
       const nastaveniNove = {
         zakladni: parseInt($("zakladni").value),
+        navrat: Math.round(h.navrat),
         t1: { zapnuto: $("t1Zapnuto").checked, pocet: h.t1Pocet, minut: h.t1Minut, nova: h.t1Nova, trvani: h.t1Trvani, jednotka: upravJednotka },
         t2: { zapnuto: $("t2Zapnuto").checked, minut: h.t2Minut, nova: h.t2Nova },
         majak: { zapnuto: $("majakZapnuto").checked, ip: $("majakIp").value.trim() }
