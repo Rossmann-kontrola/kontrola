@@ -89,7 +89,7 @@
     .pocitadlo.p b { color: var(--zelena); }
 
     /* ================= VÝSLEDEK ================= */
-    #vysledek { position: fixed; inset: 0; display: none; z-index: 10; flex-direction: column; align-items: center; justify-content: center; color: var(--bila); text-align: center; cursor: pointer; }
+    #vysledek { position: fixed; inset: 0; display: none; z-index: 40; flex-direction: column; align-items: center; justify-content: center; color: var(--bila); text-align: center; cursor: pointer; }
     #vysledek.cervena { background: repeating-linear-gradient(-45deg, rgba(0,0,0,0.07) 0 40px, transparent 40px 80px), var(--cervena); animation: blik 0.5s steps(1) 3; }
     @keyframes blik { 50% { background-color: var(--cervena-tmava); } }
     #vysledek.zelena { background: radial-gradient(circle at 50% 40%, #1C9A4B, var(--zelena) 55%, var(--zelena-tmava)); }
@@ -164,6 +164,26 @@
     .btn.odkaz { border: none; color: var(--cervena); background: none; flex: 0; }
     .btn.maly { flex: 0; padding: 9px 14px; font-size: 0.9rem; }
     .btn:disabled { opacity: 0.5; cursor: wait; }
+
+    /* ================= TABLET OSTRAHY – SLEDOVÁNÍ ================= */
+    #monitor { position: fixed; inset: 0; display: none; z-index: 30; background: var(--papir); flex-direction: column; }
+    #monitor .stred { gap: 16px; text-align: center; padding: 0 20px; }
+    .radar { position: relative; width: 190px; height: 190px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--bila); border: 1px solid var(--linka); box-shadow: 0 18px 40px rgba(35,31,32,0.08); }
+    .radar::before { content: ""; position: absolute; inset: -18px; border-radius: 50%; border: 3px solid var(--zelena);
+      opacity: 0; animation: radar 2.8s ease-out infinite; }
+    @keyframes radar { 0% { transform: scale(0.92); opacity: 0.45; } 100% { transform: scale(1.12); opacity: 0; } }
+    .radar.vypadek::before { border-color: var(--oranzova); }
+    .radar svg { width: 76px; height: 76px; color: var(--zelena); }
+    .radar.vypadek svg { color: var(--oranzova); }
+    #monNazev { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800; }
+    #monStav { font-size: 1.05rem; color: var(--text-slaby); }
+    #monPosledni { padding: 8px 18px; border-radius: 999px; background: var(--bila); border: 1px solid var(--linka); font-size: 0.95rem; }
+    .mon-historie { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 560px; }
+    #zvukZapnout { position: absolute; inset: 0; z-index: 2; display: none; flex-direction: column; gap: 12px;
+      align-items: center; justify-content: center; background: rgba(250,248,248,0.97); cursor: pointer; text-align: center; padding: 20px; }
+    #zvukZapnout b { font-size: 1.6rem; }
+    #zvukZapnout span { color: var(--text-slaby); }
     .lista-ulozit { position: sticky; bottom: -28px; background: var(--bila); padding: 14px 0 6px; border-top: 1px solid var(--linka); margin-top: 8px; }
 
     .filtry { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
@@ -218,6 +238,7 @@
     <p>Vyberte jednou, tablet si to zapamatuje.</p>
     <div class="seznam-zarizeni" id="seznamZarizeni"></div>
     <div class="hlaska chyba" id="vyberChyba"></div>
+    <button class="btn odkaz" style="margin-top:22px;flex:none" onclick="otevriPrihlaseni()">Tento tablet je pro ostrahu – přihlásit se</button>
   </div>
 
   <!-- 1) Hlavní obrazovka -->
@@ -238,7 +259,8 @@
       <div class="obal-tlacitka"><button id="tlacitko" onclick="losuj()">STISKNĚTE<small>pro kontrolu</small></button></div>
       <div id="lokalitaInfo"><span id="stavSite" title="Spojení s databází"></span><span id="nazevZarizeni"></span></div>
     </main>
-    <footer class="dolni-lista">
+    <!-- Dnešní počty se na hlavní obrazovce nezobrazují (vidí je jen admin a ostraha) -->
+    <footer class="dolni-lista skryte">
       <div class="pocitadlo"><b id="dnesCelkem">0</b> dnes celkem</div>
       <div class="pocitadlo k"><b id="dnesKontrol">0</b> kontrol</div>
       <div class="pocitadlo p"><b id="dnesProslo">0</b> prošlo</div>
@@ -246,11 +268,11 @@
   </div>
 
   <!-- 2) Výsledek -->
-  <div id="vysledek" onclick="zavriVysledek()">
+  <div id="vysledek">
     <div class="ikona" id="ikona"></div>
     <div id="textVysledku"></div>
     <div id="podtext"></div>
-    <div id="pokracuj">Ťukněte pro dalšího</div>
+    <div id="pokracuj"></div>
   </div>
 
   <!-- 3) Přihlášení -->
@@ -266,6 +288,50 @@
         <button class="btn" onclick="zavriVse()">Zpět</button>
         <button class="btn hlavni" id="loginBtn" onclick="prihlasit()">Přihlásit</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 3b) Ostraha: výběr zařízení ke sledování -->
+  <div id="vyberSledovani" class="okno">
+    <div class="karta">
+      <div class="hlavicka">
+        <img class="logo-rossmann" alt=""><h2>Které zařízení sledovat?</h2>
+        <button class="btn maly" onclick="odhlasit()">Odhlásit</button>
+      </div>
+      <div class="seznam-zarizeni" id="seznamSledovani" style="max-width:none"></div>
+      <div class="hlaska chyba" id="sledovaniChyba"></div>
+      <p class="napoveda">Tablet pak ukazuje výsledek každého stisku na vybraném zařízení – barvou i zvukem.</p>
+    </div>
+  </div>
+
+  <!-- 3c) Ostraha: sledování výsledků vybraného zařízení -->
+  <div id="monitor">
+    <header class="horni-lista">
+      <div class="znacka">
+        <img class="logo-rossmann" alt="Rossmann">
+        <div><b>Sledování kontrol</b><span id="monKdo">Ostraha</span></div>
+      </div>
+      <div class="vpravo">
+        <div id="hodinyMon" style="text-align:right;line-height:1.1"><b style="display:block;font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums">--:--</b></div>
+        <button class="btn maly" onclick="zmenitSledovane()">Jiné zařízení</button>
+        <button class="btn maly" onclick="ukonciSledovani()">Ukončit</button>
+      </div>
+    </header>
+    <main class="stred">
+      <div class="radar" id="radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <div id="monNazev">–</div>
+      <div id="monStav">Připojuji…</div>
+      <div id="monPosledni">Zatím žádný výsledek</div>
+      <div class="mon-historie" id="monHistorie"></div>
+    </main>
+    <footer class="dolni-lista">
+      <div class="pocitadlo"><b id="monCelkem">0</b> dnes celkem</div>
+      <div class="pocitadlo k"><b id="monKontrol">0</b> kontrol</div>
+      <div class="pocitadlo p"><b id="monProslo">0</b> prošlo</div>
+    </footer>
+    <div id="zvukZapnout" onclick="zapniZvukMonitoru()">
+      <b>Ťukněte pro spuštění sledování</b>
+      <span>Prohlížeč potřebuje jedno ťuknutí, aby mohl přehrávat zvuk.</span>
     </div>
   </div>
 
@@ -317,8 +383,8 @@
         <div class="blok">
           <div class="blok-hlava"><h3>Návrat na úvodní obrazovku</h3></div>
           <div class="blok-telo">
-            <div class="veta">Výsledek (červená / zelená obrazovka) se sám zavře po <input type="number" id="navrat" min="0" max="60"> s.</div>
-            <p class="napoveda">0 = výsledek zůstane, dokud na obrazovku někdo neťukne. Ťuknutím jde výsledek zavřít vždy i dřív.</p>
+            <div class="veta">Výsledek (červená / zelená obrazovka) se sám zavře po <input type="number" id="navrat" min="1" max="60"> s.</div>
+            <p class="napoveda">Po tuto dobu nejde výsledek zavřít ťuknutím ani znovu losovat. Stejná doba platí i na tabletu ostrahy.</p>
           </div>
         </div>
 
@@ -439,6 +505,7 @@
             <select id="novyRole">
               <option value="spravce">Správce – nastavení a statistiky</option>
               <option value="super">Super admin – navíc správa uživatelů a zařízení</option>
+              <option value="ostraha">Ostraha – jen sledování výsledků z vybraného zařízení</option>
             </select>
             <div class="tlacitka"><button class="btn hlavni" id="pridatBtn" onclick="pridatUzivatele()">Přidat přístup</button></div>
             <div class="hlaska" id="uzivHlaska"></div>
@@ -487,7 +554,7 @@
 
     const VYCHOZI_NASTAVENI = {
       zakladni: 5,
-      navrat: 5,   // po kolika vteřinách se výsledek sám zavře (0 = jen ťuknutím)
+      navrat: 5,   // po kolika vteřinách se výsledek sám zavře (ťuknutím zavřít nejde)
       t1: { zapnuto: true, pocet: 3, minut: 1, nova: 1, trvani: 10, jednotka: "screening" },
       t2: { zapnuto: true, minut: 10, nova: 20 },
       majak: { zapnuto: false, ip: "" }
@@ -513,6 +580,7 @@
     // =========================================================
     async function start() {
       tikej(); setInterval(tikej, 1000);
+      if (await obnovSledovani()) return;   // tablet ostrahy pokračuje ve sledování
       if (!zarizeniId) { ukazVyber(); return; }
       nactiStav();
       const ok = await nactiZarizeni();
@@ -573,6 +641,7 @@
     //  LOSOVÁNÍ S TRIGGERY
     // =========================================================
     function losuj() {
+      if (vysledekZobrazen) return;   // dokud běží odpočet, další stisk se nepočítá
       const n = nastaveni();
       const ted = Date.now();
       let p = n.zakladni;
@@ -668,6 +737,7 @@
     function tikej() {
       const ted = new Date();
       document.querySelector("#hodiny b").textContent = ted.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" });
+      document.querySelector("#hodinyMon b").textContent = document.querySelector("#hodiny b").textContent;
       document.querySelector("#hodiny span").textContent = ted.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long" });
     }
 
@@ -677,36 +747,46 @@
     const IKONA_KONTROLA = '<svg viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"><path d="M50 18 V58"/><path d="M50 80 V81"/></svg>';
     const IKONA_OK = '<svg viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M22 52 L42 72 L80 30"/></svg>';
 
-    function ukazVysledek(stop) {
+    let vysledekZobrazen = false;
+
+    // Zobrazení výsledku – na kontrolním tabletu i na tabletu ostrahy.
+    // Ťuknutím ho zavřít nejde, zmizí sám po nastaveném počtu vteřin.
+    function zobrazVysledek(stop, podtext, sekundy, jeOstraha) {
       const okno = $("vysledek");
       okno.className = stop ? "cervena" : "zelena";
       $("ikona").innerHTML = stop ? IKONA_KONTROLA : IKONA_OK;
       $("textVysledku").textContent = stop ? "KONTROLA" : "Můžete projít";
-      $("podtext").textContent = stop ? "Prosíme, umožněte ostraze provést kontrolu." : "Hezký den";
+      $("podtext").textContent = podtext;
       okno.style.display = "flex";
+      vysledekZobrazen = true;
       stop ? zvukAlarm() : zvukOk();
-      majak(stop ? "cervena" : "zelena", nastaveni().majak);
-      spustOdpocet();
+      if (!jeOstraha) majak(stop ? "cervena" : "zelena", nastaveni().majak);
+      spustOdpocet(sekundy, jeOstraha);
+    }
+    function ukazVysledek(stop) {
+      zobrazVysledek(stop, stop ? "Prosíme, umožněte ostraze provést kontrolu." : "Hezký den",
+        parseInt(nastaveni().navrat) || 5, false);
     }
 
     // Automatický návrat na úvodní obrazovku po nastaveném počtu vteřin
     let odpocet = null;
-    function spustOdpocet() {
+    function spustOdpocet(sekundy, jeOstraha) {
       clearInterval(odpocet);
-      let zbyva = parseInt(nastaveni().navrat) || 0;
+      const konec = Date.now() + Math.max(1, sekundy) * 1000;
       const text = $("pokracuj");
-      if (zbyva <= 0) { text.textContent = "Ťukněte pro dalšího"; return; }
-      text.textContent = "Návrat za " + zbyva + " s";
-      odpocet = setInterval(() => {
-        zbyva--;
-        if (zbyva <= 0) zavriVysledek();
-        else text.textContent = "Návrat za " + zbyva + " s";
-      }, 1000);
+      const krok = () => {
+        const zbyva = Math.ceil((konec - Date.now()) / 1000);
+        if (zbyva <= 0) { zavriVysledek(jeOstraha); return; }
+        text.textContent = (jeOstraha ? "Zpět ke sledování za " : "Návrat za ") + zbyva + " s";
+      };
+      krok();
+      odpocet = setInterval(krok, 250);
     }
-    function zavriVysledek() {
+    function zavriVysledek(jeOstraha) {
       clearInterval(odpocet);
       $("vysledek").style.display = "none";
-      majak("vypnout", nastaveni().majak);
+      vysledekZobrazen = false;
+      if (!jeOstraha) majak("vypnout", nastaveni().majak);
     }
 
     // =========================================================
@@ -755,6 +835,7 @@
       }
       ja = spravce;
       $("prihlaseni").style.display = "none";
+      if (spravce.role === "ostraha") { otevriVyberSledovani(); return; }
       otevriAdmin();
     }
     async function odhlasit() {
@@ -764,12 +845,159 @@
     function zavriVse() {
       $("prihlaseni").style.display = "none";
       $("admin").style.display = "none";
+      $("vyberSledovani").style.display = "none";
     }
 
     // Automatické odhlášení po 15 minutách nečinnosti v administraci
     let casovac;
     function resetCasovac() { clearTimeout(casovac); if (ja) casovac = setTimeout(odhlasit, 15 * 60000); }
     ["click", "keydown", "touchstart"].forEach(e => $("admin").addEventListener(e, resetCasovac));
+
+
+    // =========================================================
+    //  OSTRAHA – SLEDOVÁNÍ VÝSLEDKŮ JINÉHO ZAŘÍZENÍ
+    // =========================================================
+    let sledovane = null;          // zařízení, které tento tablet sleduje
+    let monKanal = null, monPojistka = null, monVidene = new Set(), monHistorie = [], wakeLock = null;
+
+    function casText(cas) { return new Date(cas).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+
+    // Po zapnutí / obnovení stránky: byl tablet naposledy ve sledování a je ostraha pořád přihlášená?
+    async function obnovSledovani() {
+      const id = nactiLS("rk_sledovane", null);
+      if (!id) return false;
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { ulozLS("rk_sledovane", null); return false; }
+      const { data: spravce } = await db.from("spravci").select("*").eq("user_id", session.user.id).maybeSingle();
+      if (!spravce || !spravce.aktivni || spravce.role !== "ostraha") { await db.auth.signOut(); ulozLS("rk_sledovane", null); return false; }
+      ja = spravce;
+      $("nacitani").classList.add("skryte");
+      await sledujZarizeni(id, true);
+      return true;
+    }
+
+    async function otevriVyberSledovani() {
+      $("vyberSledovani").style.display = "block";
+      $("sledovaniChyba").textContent = "";
+      $("seznamSledovani").innerHTML = '<div class="tocitko" style="margin:auto"></div>';
+      const { data, error } = await db.from("zarizeni").select("*").order("nazev");
+      $("seznamSledovani").innerHTML = "";
+      if (error) { $("sledovaniChyba").textContent = "Nepodařilo se spojit s databází. Zkontrolujte internet."; return; }
+      if (!data.length) { $("sledovaniChyba").textContent = "Zatím neexistuje žádné zařízení."; return; }
+      data.forEach(z => {
+        const b = document.createElement("button");
+        b.textContent = z.nazev;
+        b.onclick = () => sledujZarizeni(z.id, false);
+        $("seznamSledovani").appendChild(b);
+      });
+    }
+
+    async function sledujZarizeni(id, poObnoveni) {
+      zastavSledovani();
+      $("vyberSledovani").style.display = "none";
+      $("prihlaseni").style.display = "none";
+      ulozLS("rk_sledovane", id);
+      monVidene = new Set(); monHistorie = [];
+      $("monKdo").textContent = "Ostraha" + (ja ? " · " + ja.jmeno : "");
+      $("monNazev").textContent = "–";
+      $("monStav").textContent = "Připojuji…";
+      $("monPosledni").textContent = "Zatím žádný výsledek";
+      $("monHistorie").innerHTML = "";
+      $("monitor").style.display = "flex";
+      if (poObnoveni) $("zvukZapnout").style.display = "flex";
+      else { pripravAudio(); drzObrazovku(); }
+
+      const { data: z } = await db.from("zarizeni").select("*").eq("id", id).maybeSingle();
+      if (!z) { $("monStav").textContent = "Zařízení nebylo nalezeno. Zvolte jiné."; return; }
+      sledovane = z;
+      $("monNazev").textContent = z.nazev;
+
+      // Hned po otevření: dnešní počty a poslední výsledek (bez poplachu)
+      await nactiNoveVysledky(true);
+
+      // Živé sledování: databáze sama pošle každý nový stisk
+      monKanal = db.channel("sledovani-" + id)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "screeningy", filter: "zarizeni_id=eq." + id },
+          p => zpracujVysledek(p.new, false))
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "zarizeni", filter: "id=eq." + id },
+          p => { sledovane = p.new; $("monNazev").textContent = p.new.nazev; })
+        .subscribe();
+      // Pojistka: každých 5 vteřin se zeptat i sám (kdyby živé spojení vypadlo)
+      monPojistka = setInterval(() => nactiNoveVysledky(false), 5000);
+    }
+
+    async function nactiNoveVysledky(prvni) {
+      if (!sledovane) return;
+      const pulnoc = new Date(); pulnoc.setHours(0, 0, 0, 0);
+      const { data, error } = await db.from("screeningy").select("*")
+        .eq("zarizeni_id", sledovane.id).gte("cas", pulnoc.toISOString()).order("cas", { ascending: false }).limit(1000);
+      if (error) {
+        $("radar").classList.add("vypadek");
+        $("monStav").textContent = /permission|policy|denied/i.test(error.message)
+          ? "Účet nemá právo číst výsledky – v Supabase je potřeba spustit skript pro ostrahu."
+          : "Výpadek spojení – zkouším znovu…";
+        return;
+      }
+      $("radar").classList.remove("vypadek");
+      $("monStav").textContent = "Čekám na další stisk…";
+      const k = data.filter(x => x.stop).length;
+      $("monCelkem").textContent = data.length;
+      $("monKontrol").textContent = k;
+      $("monProslo").textContent = data.length - k;
+      if (prvni) {
+        data.forEach(x => monVidene.add(klicVysledku(x)));
+        if (data[0]) ukazPosledni(data[0]);
+        return;
+      }
+      data.slice().reverse().forEach(x => zpracujVysledek(x, true));
+    }
+
+    function klicVysledku(x) { return String(x.id ?? x.cas); }
+
+    function zpracujVysledek(x, zPojistky) {
+      if (!x || monVidene.has(klicVysledku(x))) return;
+      monVidene.add(klicVysledku(x));
+      ukazPosledni(x);
+      monHistorie.unshift(x); monHistorie = monHistorie.slice(0, 12);
+      $("monHistorie").innerHTML = monHistorie.map(h =>
+        '<span class="stitek ' + (h.stop ? "stop" : "ok") + '">' + casText(h.cas).slice(0, 5) + " " + (h.stop ? "KONTROLA" : "OK") + "</span>").join("");
+      if (!zPojistky) nactiNoveVysledky(false);   // obnovit dnešní počty
+      // Starý výsledek (třeba po výpadku internetu) už poplachem nehlásíme
+      if (Date.now() - new Date(x.cas).getTime() > 60000) return;
+      const n = Object.assign({}, VYCHOZI_NASTAVENI, sledovane.nastaveni || {});
+      zobrazVysledek(x.stop, sledovane.nazev + " · " + casText(x.cas), parseInt(n.navrat) || 5, true);
+    }
+    function ukazPosledni(x) {
+      $("monPosledni").textContent = "Poslední: " + casText(x.cas) + " – " + (x.stop ? "KONTROLA" : "prošel");
+    }
+
+    function zapniZvukMonitoru() { pripravAudio(); drzObrazovku(); $("zvukZapnout").style.display = "none"; }
+    async function drzObrazovku() {   // ať tablet ostrahy neusne
+      try { if (navigator.wakeLock && !wakeLock) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => wakeLock = null); } } catch (e) {}
+    }
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && sledovane) { drzObrazovku(); nactiNoveVysledky(false); }
+    });
+
+    function zastavSledovani() {
+      if (monKanal) { db.removeChannel(monKanal); monKanal = null; }
+      clearInterval(monPojistka); monPojistka = null;
+      sledovane = null;
+    }
+    function zmenitSledovane() {
+      zastavSledovani();
+      ulozLS("rk_sledovane", null);
+      $("monitor").style.display = "none";
+      otevriVyberSledovani();
+    }
+    async function ukonciSledovani() {
+      zastavSledovani();
+      ulozLS("rk_sledovane", null);
+      try { if (wakeLock) wakeLock.release(); } catch (e) {}
+      $("monitor").style.display = "none";
+      await db.auth.signOut(); ja = null;
+      location.reload();
+    }
 
     // =========================================================
     //  ADMINISTRACE – ZÁKLAD
@@ -850,7 +1078,7 @@
       const h = {
         t1Pocet: cisloZ("t1Pocet", 2, 50), t1Minut: cisloZ("t1Minut", 1, 120), t1Nova: cisloZ("t1Nova", 0, 100),
         t1Trvani: cisloZ("t1Trvani", 1, 500), t2Minut: cisloZ("t2Minut", 1, 600), t2Nova: cisloZ("t2Nova", 1, 100),
-        navrat: cisloZ("navrat", 0, 60)
+        navrat: cisloZ("navrat", 1, 60)
       };
       const nazev = $("nazev").value.trim();
       if (!nazev) { hlaska("ulozeno", "Vyplňte název zařízení", "chyba"); return; }
@@ -1028,7 +1256,7 @@
       seznamLidi = lide;
       $("tabUzivatele").innerHTML = lide.map(l => {
         const jaSam = l.user_id === ja.user_id;
-        return "<tr><td>" + bezpecne(l.jmeno) + (jaSam ? " (vy)" : "") + "</td><td>" + (l.role === "super" ? "Super admin" : "Správce") + "</td>" +
+        return "<tr><td>" + bezpecne(l.jmeno) + (jaSam ? " (vy)" : "") + "</td><td>" + (l.role === "super" ? "Super admin" : l.role === "ostraha" ? "Ostraha" : "Správce") + "</td>" +
           '<td><label class="spinac"><input type="checkbox" ' + (l.aktivni ? "checked " : "") + (jaSam ? "disabled " : "") +
           "onchange=\"prepniPristup('" + l.user_id + "', this.checked)\"><span></span></label></td>" +
           "<td>" + (jaSam ? "" :
@@ -1135,7 +1363,9 @@
     if ("serviceWorker" in navigator && location.protocol === "https:") {
       navigator.serviceWorker.register("sw.js").catch(() => {});
     }
-    db.auth.signOut();   // na startu nikdo není přihlášený do administrace
+    // Na startu nikdo není přihlášený do administrace.
+    // Výjimka: tablet ostrahy, který sledoval zařízení – ten zůstává přihlášený a pokračuje.
+    if (!nactiLS("rk_sledovane", null)) db.auth.signOut();
     start();
   </script>
 </body>
